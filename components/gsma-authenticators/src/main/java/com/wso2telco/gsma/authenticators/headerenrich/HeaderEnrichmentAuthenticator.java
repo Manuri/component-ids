@@ -275,6 +275,11 @@ public class HeaderEnrichmentAuthenticator extends AbstractApplicationAuthentica
         try {
 
             String loginPage = getAuthEndpointUrl(showTnC, isRegistering);
+            if (showTnC && isRegistering) {
+                DataPublisherUtil
+                        .updateAndPublishUserStatus(userStatus, DataPublisherUtil.UserState.REDIRECT_TO_CONSENT_PAGE,
+                                "Redirected to consent page");
+            }
             response.sendRedirect(response.encodeRedirectURL(loginPage + ("?" + queryParams))
                     + "&redirect_uri=" + request.getParameter("redirect_uri")
                     + "&authenticators=" + getName() + ":" + "LOCAL" );
@@ -308,9 +313,15 @@ public class HeaderEnrichmentAuthenticator extends AbstractApplicationAuthentica
             switch(userAction) {
                 case Constants.USER_ACTION_REG_CONSENT:
                     //User agreed to registration consent
+                    DataPublisherUtil
+                            .updateAndPublishUserStatus(userStatus,
+                                    DataPublisherUtil.UserState.REG_CONSENT_AGREED, "Redirected to consent page");
                     break;
                 case Constants.USER_ACTION_REG_REJECTED:
                     //User rejected to registration consent
+                    DataPublisherUtil
+                            .updateAndPublishUserStatus(userStatus, DataPublisherUtil.UserState.REG_CONSENT_REJECTED,
+                                    "Redirected to consent page");
                     terminateAuthentication(context);
                     break;
             }

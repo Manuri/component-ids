@@ -132,6 +132,15 @@ public class MSISDNAuthenticator extends AbstractApplicationAuthenticator
                 retryParam = "&authFailure=true&authFailureMsg=login.fail.message";
             }
 
+            boolean isShowTnC = (boolean) context.getProperty(Constants.IS_SHOW_TNC);
+            boolean isRegistering = (boolean) context.getProperty(Constants.IS_REGISTERING);
+
+            if (isShowTnC && isRegistering) {
+                DataPublisherUtil
+                        .updateAndPublishUserStatus((UserStatus)context.getParameter(Constants.USER_STATUS_DATA_PUBLISHING_PARAM),
+                                DataPublisherUtil.UserState.REDIRECT_TO_CONSENT_PAGE, "Redirected to consent page");
+            }
+
             response.sendRedirect(response.encodeRedirectURL(loginPage + ("?" + queryParams)) + "&redirect_uri=" + request.getParameter("redirect_uri") + "&authenticators="
                     + getName() + ":" + "LOCAL" + retryParam);
         } catch (IOException e) {
@@ -184,9 +193,15 @@ public class MSISDNAuthenticator extends AbstractApplicationAuthenticator
             		switch(userAction) {
                         case Constants.USER_ACTION_REG_CONSENT:
                             //User agreed to registration consent
+                            DataPublisherUtil
+                                    .updateAndPublishUserStatus((UserStatus)context.getParameter(Constants.USER_STATUS_DATA_PUBLISHING_PARAM),
+                                            DataPublisherUtil.UserState.REG_CONSENT_AGREED, "Redirected to consent page");
                             break;
                         case Constants.USER_ACTION_REG_REJECTED:
                             //User rejected to registration consent
+                            DataPublisherUtil
+                                    .updateAndPublishUserStatus((UserStatus)context.getParameter(Constants.USER_STATUS_DATA_PUBLISHING_PARAM),
+                                            DataPublisherUtil.UserState.REG_CONSENT_REJECTED, "Redirected to consent page");
                             terminateAuthentication(context);
                             break;
 //                        case Constants.USER_ACTION_UPGRADE_CONSENT:
@@ -217,11 +232,6 @@ public class MSISDNAuthenticator extends AbstractApplicationAuthenticator
             if (rememberMe != null && "eon".equals(rememberMe)) {
                 context.setRememberMe(true);
             }
-
-            DataPublisherUtil
-                    .updateAndPublishUserStatus(
-                            (UserStatus) context.getParameter(Constants.USER_STATUS_DATA_PUBLISHING_PARAM),
-                            DataPublisherUtil.UserState.MSISDN_AUTH_SUCCESS, "MSISDN Authentication success");
         } catch (Exception ex) {
             DataPublisherUtil
                     .updateAndPublishUserStatus(
